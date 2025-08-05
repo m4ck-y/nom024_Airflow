@@ -89,3 +89,10 @@ nom024_airflow/
 - Docker y Docker Compose
 - Cuenta de Google Cloud con BigQuery habilitado
 - Chrome/Chromium para Selenium
+
+
+# REFERENCES
+
+official pagina: https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html
+
+youtube: https://www.youtube.com/watch?v=Xe41auGl5KU&t=81s

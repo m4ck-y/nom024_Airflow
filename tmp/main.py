@@ -1,34 +1,66 @@
+"""
+Punto de entrada principal para ejecutar diferentes pipelines de datos.
+
+Este archivo orquesta la ejecución de diferentes pipelines específicos,
+cada uno definido en su propio módulo.
+"""
+
 import logging
-from pathlib import Path
-from tmp.spreadsheet.pipeline import process_web_page_to_database
 from tmp.nacionalidades import process_nationalities_data
 
-# Configurar logging
-logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
+# Configurar logging global
+logging.basicConfig(
+    level=logging.INFO, 
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 
-DOWNLOAD_DIR = Path("tmp")
-URLS = [
-    "http://www.dgis.salud.gob.mx/contenidos/intercambio/nacionalidades_gobmx.html",
-    # Agrega más URLs si lo deseas
-]
+logger = logging.getLogger(__name__)
 
 
-def run_batch_pipeline(urls: list[str], download_directory: Path) -> None:
-    """
-    Ejecuta el pipeline de procesamiento para múltiples URLs.
+def run_all_pipelines():
+    """Ejecuta todos los pipelines disponibles."""
+    logger.info("=== Iniciando ejecución de todos los pipelines ===")
     
-    Args:
-        urls: Lista de URLs a procesar
-        download_directory: Directorio donde descargar los archivos
-    """
-    for url in urls:
-        logging.info(f"Procesando URL: {url}")
-        result = process_web_page_to_database(url, download_directory)
-        if result:
-            logging.info(f"✔ Procesado: {result}")
-        else:
-            logging.warning("⚠ No se procesó ningún archivo.")
+    pipelines = [
+        ("Nacionalidades", process_nationalities_data),
+        # Aquí se pueden agregar más pipelines en el futuro
+        # ("Otro Pipeline", process_other_data),
+    ]
+    
+    results = {}
+    
+    for pipeline_name, pipeline_function in pipelines:
+        logger.info(f"Ejecutando pipeline: {pipeline_name}")
+        try:
+            success = pipeline_function()
+            results[pipeline_name] = success
+            status = "✓ EXITOSO" if success else "✗ FALLÓ"
+            logger.info(f"Pipeline {pipeline_name}: {status}")
+        except Exception as e:
+            results[pipeline_name] = False
+            logger.error(f"Error en pipeline {pipeline_name}: {e}")
+    
+    # Resumen final
+    logger.info("=== Resumen de ejecución ===")
+    for pipeline_name, success in results.items():
+        status = "✓" if success else "✗"
+        logger.info(f"{status} {pipeline_name}")
+    
+    successful_pipelines = sum(results.values())
+    total_pipelines = len(results)
+    logger.info(f"Pipelines exitosos: {successful_pipelines}/{total_pipelines}")
+    
+    return all(results.values())
 
 
 if __name__ == "__main__":
-    process_nationalities_data()
+    # Ejecutar solo el pipeline de nacionalidades por defecto
+    logger.info("Ejecutando pipeline de nacionalidades...")
+    success = process_nationalities_data()
+    
+    if success:
+        logger.info("Pipeline ejecutado exitosamente")
+    else:
+        logger.error("Error en la ejecución del pipeline")
+    
+    exit(0 if success else 1)
